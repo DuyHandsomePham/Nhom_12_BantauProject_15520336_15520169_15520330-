@@ -30,6 +30,7 @@ app.get('/', function(req, res, next) {
         });
     }
     else {
+      eventEmitter.emit('fireResult');
       res.render('index');
     }
 });

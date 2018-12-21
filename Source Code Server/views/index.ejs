@@ -1,3 +1,19 @@
 <% include partials/header %>
+<script src="/socket.io/socket.io.js"></script>
 <script type="text/javascript" src="/public/jquery.js"></script>
+<script type="text/javascript">
+var socket = io("http://localhost:3000");
+$(document).ready(()=>{
+  var count = 0;
+  $.post('/',{},function(data){
+     $('#button').html(data);
+   });
+  $('#click').click(function(){
+     document.getElementById('count').textContent = data;
+      count = count + 1;
+   });
+});
+</script>
+<div id="button"></div>
+<div id="count"></div>
 <% include partials/footer %>

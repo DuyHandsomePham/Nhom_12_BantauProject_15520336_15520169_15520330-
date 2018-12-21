@@ -2,8 +2,8 @@
 // get all the tools we need
 // ================================================================
 var express = require('express');
-var routes = require('./route/main.js');
-var net = require('net');
+var routes = require('./route/main.js'); //file xu ly request
+var net = require('net'); //tcp ip
 var mysql = require('mysql');
 var port = process.env.PORT || 3000;
 var app = express();
@@ -84,8 +84,13 @@ server.on('connection', function(sock) {
        }
     });
 
+    eventEmitter.on('fireResult',(data)=>{
+        sock.write(data.dev+':'+data.ontarget+'\r\n');
+    });
+
     sock.on('close', function(data) {
         var sql = "DELETE FROM device WHERE dev_name='"+sock.dev+"';";
+        console.log(sql);
         db.query(sql, (err,rows,fields)=>{
             if(err){}
             else {
@@ -112,7 +117,6 @@ io.on('connection', (socket)=>{
    });
    eventEmitter.on('ClickStart', ()=>{
      io.to(socket.room).emit('ToGameScreen');
-     eventEmitter.removeAllListeners();
    });
 
    socket.on('JoinIO', (data)=>{
@@ -134,13 +138,13 @@ io.on('connection', (socket)=>{
       socket.end = 1;
    });
 
-   socket.on('MyTurnEnd', function(){
+   socket.on('MyTurnEnd', function(data){
       //socket.broadcast.to(socket.room).emit('UpdateYourTurn', socket.pointer);
-      io.to(socket.room).emit('UpdateYourTurn',{end:socket.end});
+      io.to(socket.room).emit('UpdateYourTurn',{end:socket.end,timeout:data.timeout});
    });
 
-   socket.on('MapUpdate', function(){
-      socket.emit('Map', {pointer:socket.pointer,end:socket.end});
+   socket.on('MapUpdate', function(data){
+      socket.emit('Map', {pointer:socket.pointer,end:socket.end,timeout:data.timeout});
    });
 });
 

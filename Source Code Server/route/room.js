@@ -56,11 +56,7 @@ exports.deleteRoom = function(req, res, next) {
    delete req.session.roomid;
    let sql = 'DELETE FROM room WHERE roomid='+roomid+';';
       db.query(sql, (err, rows, fields)=>{
-      sql = 'DELETE FROM fire WHERE name="'+req.session.name+'";';
-      db.query(sql, (err, rows, fields)=>{
-          if (err) console.log(err);
-          else res.redirect('/room/index');
-      });
+      res.redirect('/room/index');
    });
 }
 //player2 create room

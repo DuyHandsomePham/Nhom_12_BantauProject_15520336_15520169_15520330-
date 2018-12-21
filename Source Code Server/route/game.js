@@ -47,6 +47,9 @@ exports.PlayerMap = function(req, res, next) {
              if (req.query.updateMap1) {
                 if (req.query.pointer.x != 'a') {
                   if(ontarget) {
+                     if(req.query.timeout == 0) {
+                          eventEmitter.emit('fireResult', {ontarget:'T',dev:req.session.dev});
+                     }
                      map.grid(X, Y,'','','',req.query.pointer.x,req.query.pointer.y,'my_table' ,req, res);
                   }
                   else {
@@ -113,11 +116,13 @@ exports.action = function(req, res, next) {
                          db2.query(sql, (err2,rows2,field2)=>{
                            if (err2) {console.log(err2);}
                            else {
+                              eventEmitter.emit('ontarget');
                               onX[rows1.length] = req.query.pointer.x;
                               onY[rows1.length] = req.query.pointer.y;
                               map.grid(0, 0,'',missX,missY,onX,onY,'enemy_table' ,req, res);
                            }
                          });
+                         eventEmitter.emit('fireResult', {ontarget:ontarget,dev:req.session.dev});
                      }
                      else {
                        sql = "INSERT INTO fire SET missX="+req.query.pointer.x+",missY="+req.query.pointer.y
@@ -137,9 +142,6 @@ exports.action = function(req, res, next) {
                 }
               });
               eventEmitter.emit('GetPointer', {pointer:req.query.pointer});
-          }
-          else if (req.query.toggle) {
-            map.grid(0, 0,req.query.pointer,missX,missY,onX,onY,'enemy_table' ,req, res);
           }
           else {
             map.grid(0, 0, req.query.pointer,missX,missY,onX,onY,'enemy_table' ,req, res);

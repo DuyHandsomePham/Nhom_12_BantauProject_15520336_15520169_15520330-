@@ -15,19 +15,39 @@
 <body>
   <script type="text/javascript">
   var socket = io();
-  var count = 20;
+  var count = 0;
   var dev_name = <%=dev%>;
   var roomid = <%= roomid %>;
   var turn = <%=turn%>, ptr, player1 = <%=player1%>;
-  var map, ex_ptr = {x:1,y:1};;
+  var map, ex_ptr = {x:1,y:1};
   if (player1 == 1) {
       map = 2;
   }
   else map = 1;
+  var time, timeout = 0;
   $(document).ready(()=>{
     if (turn == 1) {
         ptr = {x:1,y:1};
         document.getElementById('turn').innerHTML = '<h3 style="color:red">YOUR TURN</h3>';
+        time = setInterval(function(){
+            count++;
+            document.getElementById('time').innerHTML = '<h3 style="color:white">'+count+'</h3>';
+            if (count == 20) {
+              $.ajax({
+                  url: "/game/action",
+                  type: "GET",
+                  cache: false,
+                  data: {pointer:{x:'a',y:'a'},map:map},
+                  success: function(html) {
+                     $("#map2").html(html);
+                 }
+              });
+                count = 0;
+                timeout = 1;
+                clearInterval(time);
+                socket.emit('MyTurnEnd',{timeout:timeout});
+            }
+        },1000);
     }
     else {
       ptr = {x:'a',y:'a'};
@@ -112,7 +132,10 @@
                data: {},
                success: function(html){
                   $("#MyScore").html(html);
-                  socket.emit('MyTurnEnd');
+                  clearInterval(time);
+                  timeout = 0;
+                  count = 0;
+                  socket.emit('MyTurnEnd',{timeout:timeout});
                 }
            });
          });
@@ -123,6 +146,27 @@
           if (ptr.x == 'a') {
               ptr = ex_ptr;
               document.getElementById('turn').innerHTML = '<h3 style="color:red">YOUR TURN</h3>';
+
+              time = setInterval(function(){
+                  count++;
+                  document.getElementById('time').innerHTML = '<h3 style="color:white">'+count+'</h3>';
+                  if (count == 20) {
+                    $.ajax({
+                        url: "/game/action",
+                        type: "GET",
+                        cache: false,
+                        data: {pointer:{x:'a',y:'a'},map:map},
+                        success: function(html) {
+                           $("#map2").html(html);
+                       }
+                    });
+                      count = 0;
+                      clearInterval(time);
+                      timeout = 1;
+                      socket.emit('MyTurnEnd',{timeout:timeout});
+                  }
+              },1000);
+              socket.emit('MapUpdate',{timeout:data.timeout});
           }
           else {
               ptr ={x:'a',y:'a'};
@@ -131,7 +175,6 @@
               }
               else document.getElementById('turn').innerHTML = '';
           }
-          socket.emit('MapUpdate');
      });
 
      socket.on('Map',(data)=>{
@@ -140,13 +183,14 @@
                url: "/game/action",
                type: "GET",
                cache: false,
-               data: {toggle:1,pointer:ptr,turn:turn},
+               data: {pointer:ptr,turn:turn},
                success: function(html) {
                   if (data.end == 0) {
                      $("#map2").html(html);
                   }
                   else {
                     delete ptr;
+                    clearInterval(time);
                     document.getElementById('turn').innerHTML = '';
                     document.getElementById('result').innerHTML = '<h1 style="color:cyan">YOU LOSE</h1>';
                   }
@@ -156,7 +200,7 @@
                  url: "/game/game.ejs",
                  type: "GET",
                  cache: false,
-                 data: {map1:1,updateMap1:1,pointer:data.pointer},
+                 data: {map1:1,updateMap1:1,pointer:data.pointer,timeout:data.timeout},
                  success: function(html2){
                     $("#map1").html(html2);
                 }
@@ -185,6 +229,7 @@
   <div id="MyScore"></div>
   <div id="result"></div>
   <div id="turn"></div>
+  <div id="time"></div>
   <h3 style="color:yellow"><div id="CountDown"></div></h3>
   <form action="/room/delete.ejs" method="post">
       <input type="submit" name="return" value="Return to main page"/>
